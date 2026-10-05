@@ -104,11 +104,24 @@ function esc(s) {
 const fmtTime = (iso) => new Date(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
 const linkFor = (c) => `${BASE}?c=${c.id}&t=${c.token}`;
 
+// La conferencia que toca ahora: la última que ya empezó (o empieza en ≤15 min).
+// Los ids traen la hora en formato 24 h: c1525 = 15:25.
+function currentConf() {
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes() + 15;
+  let pick = data[0];
+  for (const c of data) {
+    const m = /^c(\d{2})(\d{2})$/.exec(c.id);
+    if (m && +m[1] * 60 + +m[2] <= mins) pick = c;
+  }
+  return pick;
+}
+
 async function load() {
   const r = await rpc("conf_admin_datos", { p_password: password });
   if (!r) return false;
   data = r;
-  if (!selected && data.length) selected = data[0].id;
+  if (!selected && data.length) selected = currentConf().id;
   render();
   $("updated").textContent = "Actualizado " + new Date().toLocaleTimeString("es-MX");
   return true;
